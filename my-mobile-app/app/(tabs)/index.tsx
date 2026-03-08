@@ -36,11 +36,15 @@ const MOCK_SONGS: Song[] = [
   },
 ];
 
-const API_BASE_CANDIDATES = Platform.select({
-  // Android emulator can reach host PC via 10.0.2.2; physical phone usually needs LAN IP.
-  android: ['http://10.0.2.2:5000', 'http://192.168.1.5:5000'],
-  default: ['http://localhost:5000', 'http://192.168.1.5:5000'],
-}) as string[];
+const API_BASE_CANDIDATES = [
+  // Public backend URL for APK/prod builds.
+  process.env.EXPO_PUBLIC_API_BASE_URL,
+  // Local fallbacks for development.
+  ...(Platform.select({
+    android: ['http://10.0.2.2:5000', 'http://192.168.1.5:5000'],
+    default: ['http://localhost:5000', 'http://192.168.1.5:5000'],
+  }) as string[]),
+].filter((base): base is string => Boolean(base));
 
 async function fetchFromApi(q: string): Promise<Song[] | null> {
   for (const base of API_BASE_CANDIDATES) {
@@ -65,8 +69,6 @@ export default function SearchTabScreen() {
   const { query, setQuery, results, setResults, searching, setSearching, setSelectedSong } = useAppState();
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
-  // Fallback to avoid runtime crashes from stale bundles referencing insets.
-  const fallbackInsets = { top: 0, bottom: 0, left: 0, right: 0 };
 
   const openDetails = (song: Song) => {
     setSelectedSong(song);
