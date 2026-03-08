@@ -16,55 +16,35 @@ export default function SearchScreen({ onViewDetails }){
   const fetchResults = async (q) => {
     if (!q || q.trim().length === 0) return;
     setSearching(true);
-    const geniusToken = process.env.REACT_APP_GENIUS_TOKEN;
-    const musixKey = process.env.REACT_APP_MUSIXMATCH_KEY;
-
     try {
-      // 1) Try Genius API if token provided (returns search hits)
-      if (geniusToken) {
-        const url = `https://api.genius.com/search?q=${encodeURIComponent(q)}`;
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${geniusToken}` } });
-        const data = await res.json();
-        if (data && data.response && data.response.hits) {
-          const mapped = data.response.hits.map(h => ({
-            id: String(h.result.id),
-            title: h.result.title,
-            artist: h.result.primary_artist && h.result.primary_artist.name,
-            image: h.result.song_art_image_thumbnail_url,
-            album: h.result.album && h.result.album.name,
-            // Genius doesn't provide lyrics via API; leave lyrics blank
-            lyrics: ''
-          }));
-          setResults(mapped);
-          setSearching(false);
-          return;
-        }
+      // Primary: call the server Gemini identify endpoint
+      const res = await fetch('/api/identify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ snippet: q })
+      });
+      const data = await res.json();
+
+      // If model returned structured identification, map to results
+      if (data && (data.title || data.artist || data.album || data.confidence !== undefined)) {
+        const title = data.title || '';
+        const artist = data.artist || '';
+        const album = data.album || '';
+        const confidence = data.confidence || 0;
+        const mapped = [{
+          id: `${title}:${artist}`,
+          title,
+          artist,
+          album,
+          image: '',
+          lyrics: '',
+          confidence
+        }];
+        setResults(mapped);
+        return;
       }
 
-      // 2) Try Musixmatch if API key provided (supports q_lyrics search)
-      if (musixKey) {
-        const url = `https://api.musixmatch.com/ws/1.1/track.search?q_lyrics=${encodeURIComponent(q)}&s_track_rating=desc&f_has_lyrics=1&page_size=10&apikey=${musixKey}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data && data.message && data.message.body && data.message.body.track_list) {
-          const mapped = data.message.body.track_list.map(item => {
-            const t = item.track;
-            return {
-              id: String(t.track_id),
-              title: t.track_name,
-              artist: t.artist_name,
-              album: t.album_name,
-              image: t.album_coverart_100x100 || '',
-              lyrics: ''
-            };
-          });
-          setResults(mapped);
-          setSearching(false);
-          return;
-        }
-      }
-
-      // 3) Fallback: local mock filtering
+      // Fallback: local mock filtering (when identify fails or returns raw text)
       const lower = q.toLowerCase();
       const filtered = MOCK_SONGS.filter(s => (
         s.title.toLowerCase().includes(lower) || s.artist.toLowerCase().includes(lower) || s.lyrics.toLowerCase().includes(lower)
