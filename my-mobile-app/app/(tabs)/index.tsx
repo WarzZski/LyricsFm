@@ -1,5 +1,6 @@
 import React from 'react';
 import { router } from 'expo-router';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import {
   ActivityIndicator,
   Alert,
@@ -34,13 +35,36 @@ const MOCK_SONGS: Song[] = [
   },
 ];
 
-const API_BASE = Platform.select({
-  android: 'http://192.168.1.5:5000',
-  default: 'http://192.168.1.5:5000',
-});
+const API_BASE_CANDIDATES = Platform.select({
+  // Android emulator can reach host PC via 10.0.2.2; physical phone usually needs LAN IP.
+  android: ['http://10.0.2.2:5000', 'http://192.168.1.5:5000'],
+  default: ['http://localhost:5000', 'http://192.168.1.5:5000'],
+}) as string[];
+
+async function fetchFromApi(q: string): Promise<Song[] | null> {
+  for (const base of API_BASE_CANDIDATES) {
+    try {
+      const url = `${base}/api/search?q=${encodeURIComponent(q)}`;
+      const res = await fetch(url);
+      if (!res.ok) continue;
+
+      const data = await res.json();
+      if (data && Array.isArray(data.results) && data.results.length > 0) {
+        return data.results as Song[];
+      }
+    } catch {
+      // Try the next candidate host.
+    }
+  }
+
+  return null;
+}
 
 export default function SearchTabScreen() {
   const { query, setQuery, results, setResults, searching, setSearching, setSelectedSong } = useAppState();
+  const tabBarHeight = useBottomTabBarHeight();
+  // Fallback to avoid runtime crashes from stale bundles referencing insets.
+  const insets = { top: 0, bottom: 0, left: 0, right: 0 };
 
   const openDetails = (song: Song) => {
     setSelectedSong(song);
@@ -52,12 +76,9 @@ export default function SearchTabScreen() {
 
     setSearching(true);
     try {
-      const url = `${API_BASE}/api/search?q=${encodeURIComponent(q)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (data && Array.isArray(data.results) && data.results.length > 0) {
-        setResults(data.results as Song[]);
+      const apiResults = await fetchFromApi(q);
+      if (apiResults && apiResults.length > 0) {
+        setResults(apiResults);
         return;
       }
 
@@ -73,7 +94,7 @@ export default function SearchTabScreen() {
       console.error('Search error', error);
       Alert.alert(
         'Search failed',
-        'Could not reach your API server. If you are using a real phone, replace localhost with your PC LAN IP in app/(tabs)/index.tsx.'
+        'Could not reach API server. Make sure Flask is running. Emulator uses 10.0.2.2, while phones use your PC LAN IP.'
       );
       setResults([]);
     } finally {
@@ -82,7 +103,7 @@ export default function SearchTabScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingBottom: tabBarHeight + 24 }]}>
       <View style={styles.panel}>
         <TextInput
           style={styles.input}
@@ -120,31 +141,33 @@ export default function SearchTabScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 14,
+    paddingHorizontal: 25,
+    paddingTop: 50,
+    paddingBottom: 30,
     backgroundColor: '#fff9f0',
     minHeight: '100%',
   },
   panel: {
     backgroundColor: '#fff',
-    borderRadius: 14,
+    borderRadius:30,
     borderWidth: 1,
     borderColor: '#d4c6b9',
-    padding: 10,
+    padding: 12,
   },
   input: {
-    fontSize: 15,
+    fontSize: 17,
     color: '#1f1a17',
   },
   actions: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 10,
-    marginBottom: 12,
+    gap: 10,
+    marginTop: 12,
+    marginBottom: 14,
   },
   btn: {
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderWidth: 1,
     borderColor: '#d4c6b9',
     backgroundColor: '#fff',
@@ -156,19 +179,22 @@ const styles = StyleSheet.create({
   primaryText: {
     color: '#fff',
     fontWeight: '700',
+    fontSize: 16,
   },
   btnText: {
     color: '#1f1a17',
     fontWeight: '600',
+    fontSize: 15,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: '700',
     color: '#1f1a17',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   emptyState: {
     color: '#6f665f',
-    marginBottom: 10,
+    marginBottom: 12,
+    fontSize: 15,
   },
 });

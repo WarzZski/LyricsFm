@@ -41,7 +41,7 @@ export default function SongDetailsScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    padding: 18,
     backgroundColor: '#fff9f0',
     minHeight: '100%',
   },
@@ -57,55 +57,57 @@ const styles = StyleSheet.create({
   cover: {
     width: '100%',
     aspectRatio: 1,
-    borderRadius: 16,
+    borderRadius: 18,
     backgroundColor: '#ddd',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   card: {
     backgroundColor: '#fff',
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#d4c6b9',
-    padding: 14,
-    gap: 6,
+    padding: 16,
+    gap: 8,
   },
   title: {
-    fontSize: 22,
+    fontSize: 25,
     fontWeight: '800',
     color: '#1f1a17',
   },
   artist: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#6f665f',
   },
   album: {
     marginTop: 4,
-    fontSize: 14,
+    fontSize: 16,
     color: '#1f1a17',
   },
   saveBtn: {
     marginTop: 10,
     backgroundColor: '#ef5a2f',
-    borderRadius: 12,
-    paddingVertical: 10,
+    borderRadius: 14,
+    paddingVertical: 12,
     alignItems: 'center',
   },
   saveText: {
     color: '#fff',
     fontWeight: '700',
+    fontSize: 16,
   },
   matchedLabel: {
     marginTop: 12,
     fontStyle: 'italic',
     color: '#1f1a17',
+    fontSize: 16,
   },
   matchedQuote: {
     color: '#6f665f',
-    fontSize: 14,
+    fontSize: 16,
   },
   confidence: {
     color: '#0d7f76',
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 4,
   },
 });
