@@ -20,7 +20,7 @@ function App() {
         <div className="device">
           <div className="device-inner">
             <header className="topbar">
-              <button className="back" onClick={() => setScreen('search')}>&lt; Back</button>
+              <button className="back" onClick={() => setScreen('search')}>Back</button>
               <div className="title">{screen === 'search' ? 'LyricSleuth' : screen === 'detail' ? 'Song Details' : 'My Vault'}</div>
               <div className="spacer" />
             </header>

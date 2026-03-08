@@ -10,6 +10,7 @@ yarn-error.log*
 # server keys
 server/sa-key.json
 README_API.md
+README.md
 .env.example
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 

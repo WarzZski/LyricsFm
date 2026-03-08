@@ -43,18 +43,23 @@ export default function SearchScreen({ onViewDetails }){
 
   return (
     <div className="fluid">
-      <div style={{marginBottom:12}}>
-        <input value={query} onChange={e=>setQuery(e.target.value)} placeholder={'Type a lyric you remember... (e.g., "caught in a bad romance")'} style={{width:'100%', padding:10, borderRadius:8, border:'1px solid #ddd'}} />
+      <div className="search-panel">
+        <input
+          className="query-input"
+          value={query}
+          onChange={e=>setQuery(e.target.value)}
+          placeholder={'Type a lyric you remember... (e.g., "caught in a bad romance")'}
+        />
       </div>
-      <div style={{display:'flex', gap:8, marginBottom:12}}>
+      <div className="action-row">
         <button className="btn primary" onClick={()=>fetchResults(query)} disabled={searching}>Search Lyrics</button>
         <button className="btn" onClick={()=>{ setQuery(''); setResults([]); }}>Clear</button>
       </div>
 
       <div>
-        <h4>Results:</h4>
+        <h4 className="section-title">Results</h4>
         <div className="list">
-          {results.length===0 && <div style={{color:'#666'}}>No results yet. Try searching sample: <em>caught in a bad romance</em></div>}
+          {results.length===0 && <div className="empty-state">No results yet. Try searching sample: <em>caught in a bad romance</em></div>}
           {results.map(s => (
             <SongItem key={s.id} song={s} onView={onViewDetails} />
           ))}
