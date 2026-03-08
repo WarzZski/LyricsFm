@@ -18,9 +18,9 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
         tabBarLabelPosition: 'below-icon',
         tabBarLabelStyle: {
-          fontSize: 22,
+          fontSize: 25,
           fontWeight: '900',
-          marginTop: -12,
+          marginTop: -20,
           textAlign: 'center',
         },
         tabBarStyle: {
