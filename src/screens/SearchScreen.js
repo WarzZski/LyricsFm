@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import SongItem from '../components/SongItem';
 
 // Mock data to demonstrate UI. Replace with real API fetch in fetchResults().
@@ -8,10 +8,7 @@ const MOCK_SONGS = [
   { id: '3', title: 'Romance', artist: 'Ex Battalion', album: 'Single', image: 'https://via.placeholder.com/300x300?text=Romance', lyrics: "caught in a bad romance" }
 ];
 
-export default function SearchScreen({ onViewDetails }){
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [searching, setSearching] = useState(false);
+export default function SearchScreen({ onViewDetails, query, setQuery, results, setResults, searching, setSearching }){
 
   const fetchResults = async (q) => {
     if (!q || q.trim().length === 0) return;

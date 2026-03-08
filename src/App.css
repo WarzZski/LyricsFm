@@ -198,6 +198,24 @@ body {
   font-size: 0.87rem;
 }
 
+.match-score {
+  margin-top: 4px;
+  font-size: 0.77rem;
+  font-weight: 700;
+  color: var(--accent-2);
+}
+
+.match-line {
+  margin-top: 4px;
+  font-size: 0.79rem;
+  color: var(--muted);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .song-actions {
   display: flex;
   flex-direction: column;
@@ -289,6 +307,14 @@ body {
 .matched-quote {
   margin-top: 8px;
   color: var(--muted);
+}
+
+.match-confidence {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--accent-2);
+  font-style: normal;
+  font-weight: 500;
 }
 
 @keyframes rise-in {

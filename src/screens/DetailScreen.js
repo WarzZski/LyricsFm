@@ -23,7 +23,12 @@ export default function DetailScreen({ song }){
 
         <div className="matched-lyric">
           Matched Lyric:
-          <div className="matched-quote">"...{(song.lyrics||'').slice(0,120)}..."</div>
+          <div className="matched-quote">
+            {song.lyrics && song.lyrics.trim() ? `"${song.lyrics}"` : 'No lyric line match returned for this result.'}
+          </div>
+          {typeof song.matchScore === 'number' && song.matchScore > 0 && (
+            <div className="match-confidence">Match confidence: {(song.matchScore * 100).toFixed(0)}%</div>
+          )}
         </div>
       </div>
     </div>

@@ -8,6 +8,11 @@ import VaultScreen from './screens/VaultScreen';
 function App() {
   const [screen, setScreen] = useState('search');
   const [selectedSong, setSelectedSong] = useState(null);
+  
+  // Lift search state to persist across navigation
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
 
   const goToDetail = (song) => {
     setSelectedSong(song);
@@ -27,7 +32,15 @@ function App() {
 
             <main className="content">
               {screen === 'search' && (
-                <SearchScreen onViewDetails={goToDetail} />
+                <SearchScreen 
+                  onViewDetails={goToDetail}
+                  query={query}
+                  setQuery={setQuery}
+                  results={results}
+                  setResults={setResults}
+                  searching={searching}
+                  setSearching={setSearching}
+                />
               )}
               {screen === 'detail' && selectedSong && (
                 <DetailScreen song={selectedSong} onBack={() => setScreen('search')} />
