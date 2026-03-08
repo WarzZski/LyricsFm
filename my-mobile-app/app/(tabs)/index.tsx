@@ -1,6 +1,7 @@
 import React from 'react';
 import { router } from 'expo-router';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
   Alert,
@@ -63,8 +64,9 @@ async function fetchFromApi(q: string): Promise<Song[] | null> {
 export default function SearchTabScreen() {
   const { query, setQuery, results, setResults, searching, setSearching, setSelectedSong } = useAppState();
   const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
   // Fallback to avoid runtime crashes from stale bundles referencing insets.
-  const insets = { top: 0, bottom: 0, left: 0, right: 0 };
+  const fallbackInsets = { top: 0, bottom: 0, left: 0, right: 0 };
 
   const openDetails = (song: Song) => {
     setSelectedSong(song);
@@ -103,7 +105,7 @@ export default function SearchTabScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, { paddingBottom: tabBarHeight + 24 }]}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + 24, paddingBottom: tabBarHeight + 24 }]}>
       <View style={styles.panel}>
         <TextInput
           style={styles.input}
@@ -141,60 +143,71 @@ export default function SearchTabScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 25,
-    paddingTop: 50,
+    paddingHorizontal: 20,
     paddingBottom: 30,
     backgroundColor: '#fff9f0',
     minHeight: '100%',
   },
   panel: {
     backgroundColor: '#fff',
-    borderRadius:30,
-    borderWidth: 1,
-    borderColor: '#d4c6b9',
-    padding: 12,
+    borderRadius: 16,
+    borderWidth: 0,
+    shadowColor: '#1f1a17',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    padding: 16,
+    marginBottom: 16,
   },
   input: {
-    fontSize: 17,
+    fontSize: 18,
     color: '#1f1a17',
+    fontWeight: '500',
   },
   actions: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 12,
-    marginBottom: 14,
+    gap: 12,
+    marginTop: 14,
+    marginBottom: 20,
   },
   btn: {
     borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: '#d4c6b9',
-    backgroundColor: '#fff',
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+    borderWidth: 0,
+    backgroundColor: '#f0ede8',
+    shadowColor: '#1f1a17',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   primary: {
     backgroundColor: '#ef5a2f',
-    borderColor: '#ef5a2f',
+    shadowColor: '#ef5a2f',
+    shadowOpacity: 0.12,
   },
   primaryText: {
     color: '#fff',
-    fontWeight: '700',
+    fontWeight: '800',
     fontSize: 16,
   },
   btnText: {
     color: '#1f1a17',
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 15,
   },
   sectionTitle: {
-    fontSize: 19,
-    fontWeight: '700',
+    fontSize: 21,
+    fontWeight: '900',
     color: '#1f1a17',
-    marginBottom: 10,
+    marginBottom: 14,
   },
   emptyState: {
-    color: '#6f665f',
-    marginBottom: 12,
-    fontSize: 15,
+    color: '#8b7f79',
+    marginBottom: 16,
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
