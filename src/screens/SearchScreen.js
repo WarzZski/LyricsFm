@@ -17,30 +17,12 @@ export default function SearchScreen({ onViewDetails }){
     if (!q || q.trim().length === 0) return;
     setSearching(true);
     try {
-      // Primary: call the server Gemini identify endpoint
-      const res = await fetch('/api/identify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ snippet: q })
-      });
+      // Primary: call server search endpoint backed by Genius API
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
       const data = await res.json();
 
-      // If model returned structured identification, map to results
-      if (data && (data.title || data.artist || data.album || data.confidence !== undefined)) {
-        const title = data.title || '';
-        const artist = data.artist || '';
-        const album = data.album || '';
-        const confidence = data.confidence || 0;
-        const mapped = [{
-          id: `${title}:${artist}`,
-          title,
-          artist,
-          album,
-          image: '',
-          lyrics: '',
-          confidence
-        }];
-        setResults(mapped);
+      if (data && Array.isArray(data.results) && data.results.length > 0) {
+        setResults(data.results);
         return;
       }
 

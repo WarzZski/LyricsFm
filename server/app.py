@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 import os
-import json
 import requests
 from dotenv import load_dotenv
 
@@ -8,100 +7,56 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Gemini / Vertex AI settings (set these in server/.env)
-PROJECT_ID = os.getenv('GCP_PROJECT')
-LOCATION = os.getenv('GCP_LOCATION', 'us-central1')
-MODEL = os.getenv('GEMINI_MODEL', 'text-bison-001')
+GENIUS_TOKEN = os.getenv('GENIUS_TOKEN', '').strip()
 
-if not PROJECT_ID:
-    app.logger.warning('GCP_PROJECT not set — Gemini identify endpoint will not function until configured')
+if not GENIUS_TOKEN:
+    app.logger.warning('GENIUS_TOKEN is not set in server/.env')
 
 
-def _get_gcp_access_token():
-    """Obtain an access token using Application Default Credentials."""
+@app.route('/api/search', methods=['GET'])
+def search():
+    """Search songs from lyric or title query via Genius REST API."""
+    q = (request.args.get('q') or '').strip()
+    if not q:
+        return jsonify({'error': 'missing query parameter q'}), 400
+
+    if not GENIUS_TOKEN:
+        return jsonify({'error': 'server not configured with GENIUS_TOKEN'}), 500
+
     try:
-        import google.auth
-        from google.auth.transport.requests import Request as GoogleRequest
-        credentials, project = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
-        credentials.refresh(GoogleRequest())
-        return credentials.token
+        r = requests.get(
+            'https://api.genius.com/search',
+            params={'q': q},
+            headers={'Authorization': f'Bearer {GENIUS_TOKEN}'},
+            timeout=15,
+        )
     except Exception as e:
-        app.logger.error('Failed to get GCP access token: %s', e)
-        return None
+        return jsonify({'error': 'genius request failed', 'details': str(e)}), 502
 
+    if r.status_code >= 400:
+        try:
+            return jsonify(r.json()), r.status_code
+        except Exception:
+            return jsonify({'error': 'genius error', 'status_code': r.status_code, 'text': r.text}), 502
 
-@app.route('/api/identify', methods=['POST'])
-def identify():
-    """Identify song from a lyric snippet using Gemini (Vertex AI).
+    data = r.json()
+    hits = ((data.get('response') or {}).get('hits') or [])
 
-    Expects JSON: { "snippet": "..." }
-    Returns parsed JSON result or raw model text if parsing fails.
-    """
-    body = request.get_json() or {}
-    snippet = body.get('snippet') or request.args.get('q')
-    if not snippet:
-        return jsonify({'error': 'missing snippet parameter'}), 400
+    mapped = []
+    for hit in hits:
+        result = hit.get('result') or {}
+        primary_artist = result.get('primary_artist') or {}
+        album = result.get('album') or {}
+        mapped.append({
+            'id': str(result.get('id') or ''),
+            'title': result.get('title') or '',
+            'artist': primary_artist.get('name') or '',
+            'album': album.get('name') or '',
+            'image': result.get('song_art_image_thumbnail_url') or result.get('song_art_image_url') or '',
+            'url': result.get('url') or '',
+        })
 
-    if not PROJECT_ID:
-        return jsonify({'error': 'server not configured with GCP_PROJECT'}), 500
-
-    token = _get_gcp_access_token()
-    if not token:
-        return jsonify({'error': 'unable to obtain GCP access token'}), 500
-
-    prompt = (
-        "Identify the song and artist for the lyric snippet below. Respond ONLY with valid JSON using the keys: title, artist, album, confidence. "
-        "If unknown, set title and artist to empty strings and confidence to 0.0.\n\nSnippet:\n" + snippet
-    )
-
-    url = f"https://{LOCATION}-aiplatform.googleapis.com/v1/projects/{PROJECT_ID}/locations/{LOCATION}/publishers/google/models/{MODEL}:predict"
-    payload = {
-        "instances": [{"content": prompt}],
-        "parameters": {"temperature": 0.0, "maxOutputTokens": 256}
-    }
-
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'Content-Type': 'application/json'
-    }
-
-    try:
-        r = requests.post(url, headers=headers, json=payload, timeout=20)
-        r.raise_for_status()
-    except Exception as e:
-        app.logger.error('Vertex AI request failed: %s', e)
-        return jsonify({'error': 'vertex request failed', 'details': str(e)}), 502
-
-    resp = r.json()
-    # Extract model text output; different responses may vary
-    try:
-        preds = resp.get('predictions') or []
-        if preds:
-            text = preds[0].get('content') or preds[0]
-        else:
-            # older APIs may use 'outputs'
-            outputs = resp.get('outputs') or []
-            text = outputs[0].get('content') if outputs else json.dumps(resp)
-    except Exception:
-        text = json.dumps(resp)
-
-    # Try parse JSON from model output
-    parsed = None
-    try:
-        parsed = json.loads(text)
-    except Exception:
-        # attempt to extract JSON substring
-        import re
-        m = re.search(r'\{.*\}', text, re.S)
-        if m:
-            try:
-                parsed = json.loads(m.group(0))
-            except Exception:
-                parsed = None
-
-    if parsed:
-        return jsonify(parsed)
-    return jsonify({'raw': text, 'full_response': resp})
+    return jsonify({'results': mapped, 'total': len(mapped)})
 
 
 if __name__ == '__main__':
